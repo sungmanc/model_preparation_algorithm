@@ -3,3 +3,6 @@
 #
 
 # flake8: noqa
+
+from . import swin_transformer
+from . import metanet
