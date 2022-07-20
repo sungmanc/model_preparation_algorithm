@@ -1,4 +1,4 @@
-_base_: _base_/mnb4_up-A.py
+_base_: _base_/metanet_b4.py
 
 model:
     type: SAMImageClassifier
