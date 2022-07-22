@@ -5,6 +5,7 @@ model:
     task: classification
     backbone:
         version: tiny
-        pretrained: /home/sungmanc/scripts/pretrained_weights/unicl_swin_transformer_tiny_image_text.pth
+        pretrained: /home/sungmanc/scripts/pretrained_weights/supervised_swin_tiny_patch4_window7_224_22k.pth
+        #pretrained: /home/sungmanc/scripts/pretrained_weights/unicl_swin_transformer_tiny_in1k_gcc15m.pth
     head:
         in_channels: 768
