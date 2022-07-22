@@ -274,8 +274,8 @@ class MBConv3x3(nn.Module):
         zeros_(self.b2[-1].weight)
 
     def forward(self, x, h=14, w=14):
-        h = int(h)
-        w = int(w)
+        h = 14
+        w = 14
         residual = self.residual(x)
         if self.b1 is not None:
             x = self.b1(x)
