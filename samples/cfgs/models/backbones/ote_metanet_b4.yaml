@@ -1,0 +1,10 @@
+model:
+    backbone:
+        type: OTEMetaNet
+        version: 4
+        frozen_stages: 5
+        out_indices: [1, 2, 4, 5]
+        pretrained: /home/sungmanc/scripts/pretrained_weights/INTERN-mnb4-Up-A-2f8bb7c06.pth.tar
+    neck:
+        in_channels: [64, 128, 192, 384]
+        

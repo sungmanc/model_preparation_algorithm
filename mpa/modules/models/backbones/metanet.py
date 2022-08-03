@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
-from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcls.models.builder import BACKBONES
+from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcv.utils.parrots_wrapper import _BatchNorm
 from timm.models.layers import DropPath, Mlp, lecun_normal_, trunc_normal_
 from torch.autograd import Variable
@@ -16,7 +16,6 @@ from mmcv.runner import load_checkpoint
 from mpa.utils.logger import get_logger
 
 logger = get_logger()
-
 
 def _make_divisible(v, divisor, min_value=None):
     if min_value is None:
@@ -274,8 +273,8 @@ class MBConv3x3(nn.Module):
         zeros_(self.b2[-1].weight)
 
     def forward(self, x, h=14, w=14):
-        h = 14
-        w = 14
+        h = int(h)
+        w = int(w)
         residual = self.residual(x)
         if self.b1 is not None:
             x = self.b1(x)
@@ -583,7 +582,6 @@ class Block(nn.Module):
         return x
 
 
-
 class MetaNet(BaseBackbone):
     def __init__(self,
                  repeats,
@@ -603,7 +601,8 @@ class MetaNet(BaseBackbone):
                  use_checkpoint=False,
                  stem_dim=32,
                  mtb_type=4,
-                 out_stages=[1, 2, 4, 5]):
+                 out_stages=[1, 2, 4, 5],
+                 init_cfg=[]):
 
         super(MetaNet, self).__init__()
         if mtb_type == 4:
@@ -740,15 +739,12 @@ class MetaNet(BaseBackbone):
                 out.append(to4d(x, h, w))
         x = to4d(x, h, w)
         x = self.head(x)  # [64, 1280, 7, 7]
-        x = self.avgpool(x)  # [64, 1280, 1, 1]
 
-        return torch.flatten(x, 1)
-        # return x
+        return x
 
     def forward(self, x):
         outs = []
-        with torch.no_grad():
-            x = self.forward_features(x)
+        x = self.forward_features(x)
         outs.append(x)
 
         return outs[-1]
@@ -824,21 +820,21 @@ def MTB4(**kwargs):
                         input_size=256,
                         **kwargs)
     model = MetaNet(**model_kwargs)
-    return 
+    return model
 
 @BACKBONES.register_module()
 class OTEMetaNet(MetaNet):
     def __init__(self, version, **kwargs):
         if version == 4:
             repeats = [2, 3, 6, 6, 6, 12]
-            frozen_stages = -1
+            frozen_stages = kwargs.get('frozen_stages', -1)
             expansion = [1, 4, 6, 3, 2, 5]
             channels = [32, 64, 128, 192, 192, 384]
             final_drop = 0.0
             mtb_type = 4
         else:
             raise ValueError("Unsupported MetaNet version {}".format(version))
-
+            
         super().__init__(
             repeats = repeats,
             frozen_stages = frozen_stages,
@@ -846,6 +842,7 @@ class OTEMetaNet(MetaNet):
             channels=channels,
             final_drop=final_drop,
             mtb_type=mtb_type,
+            out_stages=kwargs.get('out_indices', [1, 2, 4, 5])
         )
         
         if 'pretrained' in kwargs:
@@ -856,3 +853,13 @@ class OTEMetaNet(MetaNet):
         if isinstance(pretrained, str) and os.path.exists(pretrained):
             load_checkpoint(self, pretrained)
             logger.info(f"init weight - {pretrained}")
+
+if __name__ == '__main__':
+    from ptflops import get_model_complexity_info
+    with torch.cuda.device(0):
+        oteMetaNet = OTEMetaNet(version=4)
+        macs, params = get_model_complexity_info(oteMetaNet, (3, 224, 224), as_strings=True, verbose=True)
+        
+        print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
+        print('{:<30}  {:<8}'.format('Number of parameters: ', params))
+

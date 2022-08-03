@@ -355,3 +355,14 @@ class OTEMobileNetV3(MobileNetV3):
         elif pretrained is not None:
             load_checkpoint(self, pretrained_urls[self.key])
             logger.info(f"init weight - {pretrained_urls[self.key]}")
+
+if __name__ == '__main__':
+    import torch
+    from ptflops import get_model_complexity_info
+
+    with torch.cuda.device(0):
+        oteNet = OTEMobileNetV3()
+        macs, params = get_model_complexity_info(oteNet, (3, 224, 224), as_strings=True, verbose=True)
+        
+        print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
+        print('{:<30}  {:<8}'.format('Number of parameters: ', params))
