@@ -4,8 +4,10 @@ model = dict(
     backbone=dict(
         type='OTEMetaNet',
         version=4,
+        frozen_stages=-1,
+        out_indices=(5,),
     ),
-    neck=None,
+    neck=dict(type='GlobalAveragePooling'),
     head=dict(
         type='LinearClsHead',
         num_classes=1000,

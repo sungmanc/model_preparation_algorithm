@@ -5,3 +5,5 @@ model:
         frozen_stages: -1
         norm_eval: false
         pretrained: true
+
+load_from: https://storage.openvinotoolkit.org/repositories/openvino_training_extensions/models/object_detection/v2/mobilenet_v2-atss.pth
