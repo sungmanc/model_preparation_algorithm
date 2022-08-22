@@ -41,10 +41,8 @@ def to3d(x):
     N = h * w
     return x.reshape(B, C, N).transpose(1, 2)
 
-
 def hard_sigmoid(x, inplace=False):
     return F.relu6(x + 3, inplace) / 6
-
 
 class SqueezeExcitation(nn.Module):
     def __init__(self, input_channels: int, squeeze_factor: int = 4):
@@ -61,6 +59,7 @@ class SqueezeExcitation(nn.Module):
         scale = self.fc2(scale)
         # return F.hardsigmoid(scale, inplace=inplace)
         return hard_sigmoid(scale, inplace=inplace)
+
 
     def forward(self, input):
         scale = self._scale(input, True)
@@ -613,7 +612,6 @@ class MetaNet(BaseModule):
             block_ops = [MBConv3x3] * 4 + [SABlock] * 2
         elif mtb_type == 15:
             block_ops = [FusedMBConv3x3] * 2 + [MBConv3x3] * 2 + [Block] * 2
-
         self.frozen_stages = frozen_stages
         self.use_checkpoint = use_checkpoint
         self.repeats = repeats

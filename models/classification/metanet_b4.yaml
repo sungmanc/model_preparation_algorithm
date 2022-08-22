@@ -5,5 +5,9 @@ model:
     task: classification
     backbone:
       version: 4
+<<<<<<< HEAD
       frozen_stages: -1
       #pretrained: /local/sungmanc/pretrained_weights/INTERN-mnb4-Up-A-2f8bb7c06.pth.tar
+=======
+      pretrained: /home/sungmanc/scripts/pretrained_weights/INTERN-mnb4-Up-A-2f8bb7c06.pth.tar
+>>>>>>> b2e3750b7f6d507cc20cda293fce2e040ac96b61
