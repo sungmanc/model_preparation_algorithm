@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
-from mmcv.runner import BaseModule
 from mmcls.models.builder import BACKBONES
+from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcv.utils.parrots_wrapper import _BatchNorm
 from timm.models.layers import DropPath, Mlp, lecun_normal_, trunc_normal_
 from torch.autograd import Variable
@@ -42,10 +42,6 @@ def to3d(x):
     return x.reshape(B, C, N).transpose(1, 2)
 
 
-def hard_sigmoid(x, inplace=False):
-    return F.relu6(x + 3, inplace) / 6
-
-
 class SqueezeExcitation(nn.Module):
     def __init__(self, input_channels: int, squeeze_factor: int = 4):
         super().__init__()
@@ -59,8 +55,8 @@ class SqueezeExcitation(nn.Module):
         scale = self.fc1(scale)
         scale = self.relu(scale)
         scale = self.fc2(scale)
-        # return F.hardsigmoid(scale, inplace=inplace)
-        return hard_sigmoid(scale, inplace=inplace)
+        return F.hardsigmoid(scale, inplace=inplace)
+        # return hard_sigmoid(scale, inplace=inplace)
 
     def forward(self, input):
         scale = self._scale(input, True)
@@ -586,13 +582,14 @@ class Block(nn.Module):
         return x
 
 
-class MetaNet(BaseModule):
+class MetaNet(BaseBackbone):
     def __init__(self,
                  repeats,
                  expansion,
                  channels,
                  strides=[1, 2, 2, 2, 1, 2],
                  frozen_stages=4,
+                 num_classes=1000,
                  drop_path_rate=0.,
                  input_size=224,
                  weight_init='',
@@ -605,20 +602,19 @@ class MetaNet(BaseModule):
                  stem_dim=32,
                  mtb_type=4,
                  out_stages=[1, 2, 4, 5],
-                 init_cfg=[],
-                 **kwargs):
+                 init_cfg=[]):
 
-        super(MetaNet, self).__init__(init_cfg)
+        super(MetaNet, self).__init__()
         if mtb_type == 4:
             block_ops = [MBConv3x3] * 4 + [SABlock] * 2
         elif mtb_type == 15:
             block_ops = [FusedMBConv3x3] * 2 + [MBConv3x3] * 2 + [Block] * 2
 
+        self.num_classes = num_classes
         self.frozen_stages = frozen_stages
         self.use_checkpoint = use_checkpoint
         self.repeats = repeats
         self.out_blocks = []
-        self.strides = strides
         self.stem = nn.Sequential(
             nn.Conv2d(3,
                       stem_dim,
@@ -630,6 +626,10 @@ class MetaNet(BaseModule):
             nn.GELU(),
         )
 
+        # repeats =   [1, 2, 2, 3, 5, 8]
+        # strides =   [1, 2, 2, 2, 1, 2]
+        # expansion = [1, 6, 6, 4, 4, 4]
+        # channels =  [16, 32, 48, 96, 128, 192]
         dpr = [
             x.item() for x in torch.linspace(0, drop_path_rate, sum(repeats))
         ]  # stochastic depth decay rule
@@ -645,10 +645,13 @@ class MetaNet(BaseModule):
             cout = channels[stage]
             # block_op = MBConv3x3 if stage < 3 else Block
             block_op = block_ops[stage]
+            print(f'stage {stage}, cin {cin}, cout {cout},\
+                 s {strides[stage]}, e {expansion[stage]} b {block_op}')
             seq_l = seq_l // (strides[stage]**2)
             for i in range(repeats[stage]):
                 stride = strides[stage] if i == 0 else 1
-                block = block_op(cin,
+                blocks.append(
+                    block_op(cin,
                              cout,
                              stride=stride,
                              mlp_ratio=expansion[stage],
@@ -656,10 +659,9 @@ class MetaNet(BaseModule):
                              seq_l=seq_l,
                              head_dim=head_dim,
                              init_values=init_values,
-                             conv_embedding=conv_embedding)
+                             conv_embedding=conv_embedding))
                 cin = cout
                 self.scale.append(stride)
-                blocks.append(block)
 
             if stage in out_stages:
                 self.out_blocks.append(len(blocks) - 1)
@@ -682,7 +684,8 @@ class MetaNet(BaseModule):
             final_drop) if final_drop > 0.0 else nn.Identity()
         self.avgpool = nn.AdaptiveAvgPool2d(1)
 
-        head_bias = -math.log(1000) if 'nlhb' in weight_init else 0.
+        head_bias = -math.log(
+            self.num_classes) if 'nlhb' in weight_init else 0.
         # trunc_normal_(self.pos_embed, std=.02)
         # Weight init
         assert weight_init in ('jax', 'jax_nlhb', 'nlhb', '')
@@ -732,34 +735,31 @@ class MetaNet(BaseModule):
                 x = blk(x, h, w)
             h = math.ceil(h / self.scale[i])
             w = math.ceil(w / self.scale[i])
-
-            if i in self.out_blocks:
+            if i < len(self.blocks) - 1:
                 out.append(to4d(x, h, w))
+        x = to4d(x, h, w)
+        x = self.head(x)  # [64, 1280, 7, 7]
 
-        return out
+        return x
 
     def forward(self, x):
-        outs = self.forward_features(x)
-        if len(outs) > 1: ### detection
-            return tuple(outs)
-        else: ### classification
-            return self.head(outs[-1])
+        outs = []
+        x = self.forward_features(x)
+        outs.append(x)
+
+        return outs[-1]
 
     def _freeze_stages(self):
         if self.frozen_stages >= 0:
-            self.stem.eval()
-            for param in self.stem.parameters():
-                param.requires_grad = False
-            
-            idx = 0
-
-            for stage in range(self.frozen_stages+1):
-                for _ in range(self.repeats[stage]):
-                    b = self.blocks[idx]
-                    b.eval()
-                    for param in b.parameters():
+            for k, (name, m) in enumerate(self.named_modules()):
+                if k == 0:
+                    continue
+                else:
+                    m.eval()
+                    for param in m.parameters():
                         param.requires_grad = False
-                    idx += 1
+        else:
+            pass
 
     def train(self, mode=True):
         super(MetaNet, self).train(mode)
@@ -820,7 +820,7 @@ def MTB4(**kwargs):
                         input_size=256,
                         **kwargs)
     model = MetaNet(**model_kwargs)
-    return 
+    return model
 
 @BACKBONES.register_module()
 class OTEMetaNet(MetaNet):

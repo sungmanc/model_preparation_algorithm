@@ -12,5 +12,12 @@ model = dict(
         type='LinearClsHead',
         num_classes=1000,
         in_channels=1280,
+        init_cfg=dict(
+            type='Kaiming',
+            a=2.23606,
+            mode='fan_out',
+            nonlinearity='relu',
+            distribution='uniform',
+        ),
         loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
     ))

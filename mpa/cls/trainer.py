@@ -44,7 +44,6 @@ class ClsTrainer(ClsStage):
             return {}
 
         cfg = self.configure(model_cfg, model_ckpt, data_cfg, training=True, **kwargs)
-
         timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
 
         # Environment
