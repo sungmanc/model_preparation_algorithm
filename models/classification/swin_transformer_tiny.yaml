@@ -1,0 +1,10 @@
+_base_: _base_/swin_transformer.py
+
+model:
+    type: SAMImageClassifier
+    task: classification
+    backbone:
+        version: base
+        pretrained: /home/sungmanc/scripts/pretrained_weights/unicl_swin_transformer_base.pth
+    head:
+        in_channels: 1024

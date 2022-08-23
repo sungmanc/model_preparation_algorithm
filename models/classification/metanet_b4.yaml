@@ -1,0 +1,8 @@
+_base_: _base_/metanet_b4.py
+
+model:
+    type: SAMImageClassifier
+    task: classification
+    backbone:
+      version: 4
+      pretrained: /home/sungmanc/scripts/pretrained_weights/INTERN-mnb4-Up-A-2f8bb7c06.pth.tar
