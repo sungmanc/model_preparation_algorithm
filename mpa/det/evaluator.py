@@ -28,8 +28,8 @@ class DetectionEvaluator(DetectionInferrer):
             return {}
 
         cfg = self.configure(model_cfg, model_ckpt, data_cfg, training=False, **kwargs)
-        cfg.dump(osp.join(cfg.work_dir, 'config.py'))
-        logger.info(f'Config:\n{cfg.pretty_text}')
+        #cfg.dump(osp.join(cfg.work_dir, 'config.py'))
+        #logger.info(f'Config:\n{cfg.pretty_text}')
         logger.info('evaluate!')
 
         # mmcv.mkdir_or_exist(osp.abspath(cfg.work_dir))

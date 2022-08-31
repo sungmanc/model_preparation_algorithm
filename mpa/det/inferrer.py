@@ -102,6 +102,7 @@ class DetectionInferrer(DetectionStage):
             shuffle=False)
 
         # Target classes
+        """
         if 'task_adapt' in cfg:
             target_classes = cfg.task_adapt.final
             if len(target_classes) < 1:
@@ -109,7 +110,9 @@ class DetectionInferrer(DetectionStage):
                                f'configuration')
         else:
             target_classes = dataset.CLASSES
-
+        """
+        target_classes = dataset.CLASSES
+        
         # Model
         cfg.model.pretrained = None
         if cfg.model.get('neck'):
