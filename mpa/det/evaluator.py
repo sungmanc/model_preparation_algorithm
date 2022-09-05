@@ -42,6 +42,7 @@ class DetectionEvaluator(DetectionInferrer):
         eval_kwargs = self.cfg.get('evaluation', {}).copy()
         for key in ['interval', 'tmpdir', 'start', 'gpu_collect', 'save_best']:
             eval_kwargs.pop(key, None)
+
         eval_result = self.dataset.evaluate(detections, **eval_kwargs)
         logger.info(eval_result)
         output_file_path = osp.join(cfg.work_dir, 'eval_result.json')

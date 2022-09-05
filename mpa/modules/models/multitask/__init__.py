@@ -1,0 +1,1 @@
+from . import cls_det_model

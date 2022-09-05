@@ -47,39 +47,38 @@ class MultitaskInferrer(MultitaskStage):
                 self.dataset[0],
                 cfg.data.samples_per_gpu,
                 cfg.data.workers_per_gpu,
-                seed=cfg.seed
+                seed=cfg.seed,
+                shuffle=False
             ),
             build_dataloader(
                 self.dataset[1],
-                cfg.data.samples_per_gpu,
+                1,
                 cfg.data.workers_per_gpu,
-                seed=cfg.seed
+                seed=cfg.seed,
+                shuffle=False
             ),
         ]
         
         # build the model and load checkpoint
         cfg.model.bbox_head.num_classes = len(self.dataset[1].CLASSES)
         cfg.model.cls_head.num_classes = len(self.dataset[0].CLASSES)
+        
         model = build_model(cfg.model)
         
-        fp16_cfg = cfg.get('fp16', None)
-        if fp16_cfg is not None:
-            wrap_fp16_model(model)
         if cfg.load_from is not None:
             logger.info('load checkpoint from ' + cfg.load_from)
             _ = load_checkpoint(model, cfg.load_from, map_location='cpu')
-
+        
+        model.eval()
         model = MMDataParallel(model, device_ids=[0])
 
         # InferenceProgressCallback (Time Monitor enable into Infer task)
         MultitaskStage.set_inference_progress_callback(model, cfg)
 
-        from mmdet.apis import single_gpu_test
-        #outputs = single_gpu_test(model.module.detector, data_loaders[1])
-        outputs = self.single_gpu_test(model, data_loaders)
-
-        return outputs
-
+        results = self.single_gpu_test(model, data_loaders)
+        
+        return results
+    
     def single_gpu_test(self, model, data_loader):
         model.eval()
         task_names = ['cls_results', 'det_results']
@@ -102,11 +101,9 @@ class MultitaskInferrer(MultitaskStage):
                         for r in result:
                             results[task].append(r)
                 elif task == 'det_results':
-                    if isinstance(result[0], tuple):
-                        result = [(bbox_results, encode_mask_results(mask_results), *other)
-                        for bbox_results, mask_results, *other in result]
                     results[task].extend(result)                   
                 for _ in range(batch_size):
                     prog_bar.update()
 
         return results
+    

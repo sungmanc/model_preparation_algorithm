@@ -20,6 +20,13 @@ from mmcv.runner import build_optimizer, build_runner
 from mmdet.parallel import MMDataCPU
 
 from mpa.multitask.builder import build_dataset, build_dataloader, build_model
+
+
+from mmdet.datasets import build_dataloader as mmdet_build_dataloader
+from mmdet.datasets import replace_ImageToTensor
+from mmdet.core import EvalHook
+
+
 from mpa.registry import STAGES
 from .stage import MultitaskStage
 from mpa.modules.hooks.eval_hook import CustomEvalHook, DistCustomEvalHook, MultitaskEvalHook
@@ -203,35 +210,29 @@ class MultitaskTrainer(MultitaskStage):
         
         if validate:
             val_dataset = [build_dataset(cfg.data.val[0], 'classification', dict(test_mode=True)), build_dataset(cfg.data.val[1], 'detection', dict(test_mode=True))]
-            val_dataset = [val_dataset if isinstance(val_dataset, (list, tuple)) else [val_dataset]]
-            val_dataloaders = []
-            for ds in val_dataset:
-                if isinstance(ds, list):
-                    sub_loaders = [
-                        build_dataloader(
-                            sub_ds,
-                            cfg.data.samples_per_gpu,
-                            cfg.data.workers_per_gpu,
-                            dist=distributed,
-                            seed=cfg.seed
-                        ) for sub_ds in ds
-                    ]
-                    val_dataloaders.append(ComposedDL(sub_loaders))
-                else:
-                    val_dataloaders.append(
-                        build_dataloader(
-                            ds,
-                            cfg.data.samples_per_gpu,
-                            cfg.data.workers_per_gpu,
-                            dist=distributed,
-                            seed=cfg.seed
-                        ))
+            val_dataloaders = [
+                build_dataloader(
+                    val_dataset[0],
+                    1,
+                    cfg.data.workers_per_gpu,
+                    seed=cfg.seed,
+                    shuffle=False
+                ),
+                build_dataloader(
+                    val_dataset[1],
+                    1,
+                    cfg.data.workers_per_gpu,
+                    seed=cfg.seed,
+                    shuffle=False
+                ),
+            ]
             
             eval_cfg = cfg.get('evaluation', {})
             eval_cfg['by_epoch'] = cfg.runner['type'] != 'IterBasedRunner'
             eval_hook = MultitaskEvalHook #TODO: consider distributed environment
             runner.register_hook(eval_hook(val_dataloaders, **eval_cfg), priority='HIGHEST')
-        
+    
+         
         if cfg.get('resume_from', False):
             runner.resume(cfg.resume_from)
         elif cfg.get('load_from', False):

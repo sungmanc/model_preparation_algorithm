@@ -1,0 +1,28 @@
+workflow_hooks:
+    - type: WFProfileHook
+      name: profile_hook
+
+stages:
+  - name: train
+    type: MultitaskTrainer
+    task: multitask
+    mode: train
+    config: {{ fileDirname }}/stages/multitask/cls_det.yaml
+    output:
+      - final_ckpt
+
+  - name: evaluation
+    type: MultitaskEvaluator
+    task: multitask
+    mode: train
+    config: {{ fileDirname }}/stages/multitask/cls_det.yaml
+    input:
+      pretrained:
+        stage_name: train
+        output_key: final_ckpt
+
+  - name: evaluation
+    type: MultitaskEvaluator
+    task: multitask
+    mode: eval
+    config: {{ fileDirname }}/stages/multitask/cls_det.yaml 

@@ -1,0 +1,23 @@
+_base_: [
+    './train.yaml',
+    '../_base_/models/multitask/cls_det_model.py',
+    '../_base_/data/multitask_imagenet_coco.py'
+]
+
+optimizer:
+    lr: 0.01
+    momentum: 0.9
+    weight_decay: 0.0005
+
+optimizer_config:
+    type: SAMOptimizerHook
+
+custom_hooks:
+- type: NoBiasDecayHook
+- type: ModelEmaV2Hook
+
+log_config:
+    interval: 100
+    
+deterministic: False
+seed: 1234

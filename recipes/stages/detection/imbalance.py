@@ -18,7 +18,7 @@ runner = dict(
     max_epochs=30
 )
 
-evaluation = dict(interval=1, metric='mAP', save_best='mAP')
+evaluation = dict(interval=1, metric='bbox', save_best='bbox')
 
 custom_hooks = [
     dict(
