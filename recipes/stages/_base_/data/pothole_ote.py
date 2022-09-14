@@ -9,10 +9,9 @@ __data_root = 'data/pothole/'
 __train_pipeline = {{_base_.train_pipeline}}
 __test_pipeline = {{_base_.test_pipeline}}
 
-__samples_per_gpu = 2
 
 data = dict(
-    samples_per_gpu=__samples_per_gpu,
+    samples_per_gpu=8,
     workers_per_gpu=2,
     train=dict(
         type=__dataset_type,

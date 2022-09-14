@@ -58,7 +58,7 @@ class MultitaskModel(nn.Module):
         det_loss = self.detector.forward_train(det_imgs, det_img_metas, det_bboxes, det_labels)
         
         total_loss = det_loss
-        total_loss['cls_loss'] = cls_loss
+        total_loss['cls_loss'] = cls_loss/4
 
         return total_loss
 

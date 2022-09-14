@@ -99,6 +99,11 @@ class DetectionTrainer(DetectionStage):
         # meta['config'] = cfg.pretty_text
         meta['seed'] = cfg.seed
         meta['exp_name'] = cfg.work_dir
+        
+        ###### temp
+        cfg.checkpoint_config.interval = 6250
+        cfg.checkpoint_config.by_epoch = False
+
         if cfg.checkpoint_config is not None:
             cfg.checkpoint_config.meta = dict(
                 mmdet_version=__version__ + get_git_hash()[:7],

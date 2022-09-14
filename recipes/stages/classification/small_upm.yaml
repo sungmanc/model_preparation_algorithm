@@ -1,0 +1,28 @@
+_base_: [
+    './train.yaml',
+    '../_base_/data/cls_data.py',
+    '../_base_/models/classifiers/classifier.py',
+]
+
+runner:
+  type: EpochBasedRunner
+  max_epochs: 10
+
+optimizer_config:
+    type: SAMOptimizerHook
+
+optimizer:
+    type: SGD
+    lr: 0.01
+    momentum: 0.9
+
+evaluation: 
+    metric: ['accuracy']
+
+task_adapt: 
+    type: 'mpa'
+    op: 'REPLACE'
+
+custom_hooks:
+- type: NoBiasDecayHook
+- type: ModelEmaV2Hook

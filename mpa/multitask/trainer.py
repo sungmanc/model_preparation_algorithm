@@ -29,7 +29,7 @@ from mmdet.core import EvalHook
 
 from mpa.registry import STAGES
 from .stage import MultitaskStage
-from mpa.modules.hooks.eval_hook import CustomEvalHook, DistCustomEvalHook, MultitaskEvalHook
+from mpa.modules.hooks.eval_hook import CustomEvalHook, DistCustomEvalHook, MultitaskEvalHook, DistMultitaskEvalHook
 from mpa.modules.datasets.composed_dataloader import ComposedDL
 from mpa.utils.logger import get_logger
 
@@ -128,12 +128,12 @@ class MultitaskTrainer(MultitaskStage):
         dataset = [dataset if isinstance(dataset, (list, tuple)) else [dataset]]
 
         data_loaders = []
-        for ds in dataset:
+        for i, ds in enumerate(dataset):
             if isinstance(ds, list):
                 sub_loaders = [
                     build_dataloader(
                         sub_ds,
-                        cfg.data.samples_per_gpu,
+                        cfg.data.samples_per_gpu[i],
                         cfg.data.workers_per_gpu,
                         num_gpus=len(cfg.gpu_ids),
                         dist=distributed,
@@ -216,20 +216,22 @@ class MultitaskTrainer(MultitaskStage):
                     1,
                     cfg.data.workers_per_gpu,
                     seed=cfg.seed,
-                    shuffle=False
+                    shuffle=False,
+                    dist=distributed,
                 ),
                 build_dataloader(
                     val_dataset[1],
                     1,
                     cfg.data.workers_per_gpu,
                     seed=cfg.seed,
-                    shuffle=False
+                    shuffle=False,
+                    dist=distributed,
                 ),
             ]
             
             eval_cfg = cfg.get('evaluation', {})
             eval_cfg['by_epoch'] = cfg.runner['type'] != 'IterBasedRunner'
-            eval_hook = MultitaskEvalHook #TODO: consider distributed environment
+            eval_hook = DistMultitaskEvalHook if distributed else MultitaskEvalHook  #TODO: consider distributed environment
             runner.register_hook(eval_hook(val_dataloaders, **eval_cfg), priority='HIGHEST')
     
          

@@ -1,0 +1,10 @@
+_base_: [
+    '../backbones/ote_mobilenet_v2_w1.yaml',
+    '../heads/linear_cls.yaml',
+    '../losses/cross_entropy.yaml'
+]
+
+
+model:
+  backbone:
+    out_indices: [5,]

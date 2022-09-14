@@ -16,3 +16,7 @@ evaluation:
     metric:
         cls_metric: ['accuracy']
         det_metric: ['bbox']
+
+dist_params:
+    backend: 'nccl'
+    linear_scale_lr: True

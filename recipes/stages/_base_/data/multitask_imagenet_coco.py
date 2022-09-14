@@ -4,7 +4,7 @@ __det_img_norm_cfg = dict(mean=[0, 0, 0], std=[255, 255, 255], to_rgb=True)
 
 #### Pipeline for classification
 #__cls_data_root='./data/imagenet/'
-__cls_data_root='./data/cifar100/'
+__cls_data_root='./data/cifar100_cls_per_img_6_1/'
 #__cls_resize_target_size = (992, 736)
 __cls_resize_target_size = 224
 __cls_train_pipeline = [
@@ -27,8 +27,8 @@ __cls_test_pipeline = [
 ]
 
 #### Pipeline for detection
-#__det_data_root='./data/coco/'
-__det_data_root='./data/pothole/'
+__det_data_root='./data/coco/'
+#__det_data_root='./data/pothole/'
 __det_img_size = (992, 736)
 __det_train_pipeline = [
     dict(type='LoadImageFromFile'),
@@ -63,10 +63,11 @@ __det_test_pipeline = [
 ]
 
 #### 
-__samples_per_gpu = 8
+__cls_samples_per_gpu = 12
+__det_samples_per_gpu = 12
 
 data = dict(
-    samples_per_gpu=__samples_per_gpu,
+    samples_per_gpu=[__cls_samples_per_gpu, __det_samples_per_gpu],
     workers_per_gpu=2,
     train=[
         # Classification Dataset
@@ -77,12 +78,12 @@ data = dict(
         # Detection Dataset
         dict(
             type="CocoDataset",
-            #ann_file=__det_data_root + 'annotations/instances_train2017.json',
-            ann_file=__det_data_root + 'annotations/instances_train.json',
-            #img_prefix=__det_data_root + 'train2017/',
-            img_prefix=__det_data_root + 'images/train/',
+            ann_file=__det_data_root + 'annotations/instances_train2017.json',
+            #ann_file=__det_data_root + 'annotations/instances_train.json',
+            img_prefix=__det_data_root + 'train2017/',
+            #img_prefix=__det_data_root + 'images/train/',
             pipeline=__det_train_pipeline,
-            classes=['pothole']
+            #classes=['pothole']
             )
     ],
     val=[
@@ -95,13 +96,13 @@ data = dict(
         # Detection Dataset
         dict(
             type="CocoDataset",
-            #ann_file=__det_data_root + 'annotations/instances_val2017.json',
-            ann_file=__det_data_root + 'annotations/instances_val.json',
-            #img_prefix=__det_data_root + 'val2017/',
-            img_prefix=__det_data_root + 'images/val/',
+            ann_file=__det_data_root + 'annotations/instances_val2017.json',
+            #ann_file=__det_data_root + 'annotations/instances_val.json',
+            img_prefix=__det_data_root + 'val2017/',
+            #img_prefix=__det_data_root + 'images/val/',
             test_mode=True,
             pipeline=__det_test_pipeline,
-            classes=['pothole']
+            #classes=['pothole']
             )
     ],
     test=[
@@ -114,13 +115,13 @@ data = dict(
         # Detection Dataset
         dict(
             type="CocoDataset",
-            #ann_file=__det_data_root + 'annotations/instances_val2017.json',
-            ann_file=__det_data_root + 'annotations/instances_val.json',
-            #img_prefix=__det_data_root + 'val2017/',
-            img_prefix=__det_data_root + 'images/val/',
+            ann_file=__det_data_root + 'annotations/instances_val2017.json',
+            #ann_file=__det_data_root + 'annotations/instances_val.json',
+            img_prefix=__det_data_root + 'val2017/',
+            #img_prefix=__det_data_root + 'images/val/',
             test_mode=True,
             pipeline=__det_test_pipeline,
-            classes=['pothole']
+            #classes=['pothole']
             )
     ]
 )

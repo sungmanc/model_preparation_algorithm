@@ -143,12 +143,13 @@ class ClsTrainer(ClsStage):
             logger.info(f'dist info world_size = {dist.get_world_size()}, rank = {dist.get_rank()}')
 
         # model
+        cfg.model.head.num_classes = len(dataset[0].CLASSES)
         model = build_classifier(cfg.model)
 
         # prepare data loaders
         dataset = dataset if isinstance(dataset, (list, tuple)) else [dataset]
         train_data_cfg = Stage.get_train_data_cfg(cfg)
-        drop_last = train_data_cfg.drop_last if train_data_cfg.get('drop_last', False) else False
+        drop_last = False
 
         # updated to adapt list of dataset for the 'train'
         data_loaders = []

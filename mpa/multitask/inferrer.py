@@ -45,7 +45,7 @@ class MultitaskInferrer(MultitaskStage):
         data_loaders = [
             build_dataloader(
                 self.dataset[0],
-                cfg.data.samples_per_gpu,
+                cfg.data.samples_per_gpu[0],
                 cfg.data.workers_per_gpu,
                 seed=cfg.seed,
                 shuffle=False
