@@ -1,0 +1,8 @@
+_base_: _base_/ote_mobilenet_v2_w1.py
+
+model:
+    type: SAMImageClassifier
+    task: classification
+    head:
+        in_channels: 320
+        hid_channels: 1280

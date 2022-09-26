@@ -758,6 +758,12 @@ class MetaNet(BaseModule):
                     for param in b.parameters():
                         param.requires_grad = False
                     idx += 1
+        
+        if self.frozen_stages == 5:
+            m = self.head
+            m.eval()
+            for param in m.parameters():
+                param.requires_grad = False
 
     def train(self, mode=True):
         super(MetaNet, self).train(mode)
@@ -860,3 +866,6 @@ if __name__ == '__main__':
         
         print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
         print('{:<30}  {:<8}'.format('Number of parameters: ', params))
+
+
+

@@ -6,3 +6,4 @@
 
 from . import swin_transformer
 from . import metanet
+from . import imgclsmob

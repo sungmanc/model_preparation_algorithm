@@ -6,4 +6,3 @@ model:
     backbone:
       version: 4
       frozen_stages: 5
-      #pretrained: /local/sungmanc/pretrained_weights/INTERN-mnb4-Up-A-2f8bb7c06.pth.tar
